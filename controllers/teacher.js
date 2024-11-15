@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { TeacherModel } from '../models/teacherModel.js';
+import { UserModel } from '../models/userModel.js';
 
 
 

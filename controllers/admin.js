@@ -4,9 +4,8 @@ import { AdminModel } from '../models/adminModel.js';
 import { adminSchema } from '../validators/adminValidator.js';
 import { UserModel } from '../models/userModel.js';
 import { userSchema } from '../validators/userValidator.js';
-
-// Secret key for JWT (should be stored securely)
-const JWT_SECRET = 'your_jwt_secret_key';
+import { StudentModel } from '../models/studentModel.js';
+import { CourseModel } from '../models/courseModel.js';
 
 // Registrating the Administrator
 export const registerAdmin = async (req, res, next) => {
@@ -33,7 +32,7 @@ export const registerAdmin = async (req, res, next) => {
         next(error)
 
     }
-}
+};
 
 // Administrator Login 
 export const loginAdmin = async (req, res, next) => {
@@ -88,20 +87,34 @@ export const registerUser = async (req, res, next) => {
             return res.status(400).send(error.details[0].message);
         }
 
-        // Validate input
-        const email = value.email 
-        if (!email) {
-            return res.status(400).json({ message: 'Email is required' });
-        }
+        // // Validate input
+        // const email = value.email 
+        // if (!email) {
+        //     return res.status(400).json({ message: 'Email is required' });
+        // }
 
-        // Check if the user already exists
-        const existingUser = await UserModel.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: 'User with this email already exists.' });
-        }
+         //  Check if the user is already in the Database
+         const email = value.email;
 
-        // Hash the password
-        const hashedPassword = await bcrypt.hash(value.password, 10);
+         const findIfUserExist = await UserModel.findOne({ email });
+         if (findIfUserExist) {
+             return res.status(401).send("User is already registered");
+         } else {
+             const hashedPassword = bcrypt.hashSync(value.password, 12);
+             value.password = hashedPassword;
+ 
+             const addAdmin = await UserModel.create(value);
+             return res.status(201).send("User successfully registered");
+         }
+
+        // // Check if the user already exists
+        // const existingUser = await UserModel.findOne({ email });
+        // if (existingUser) {
+        //     return res.status(400).json({ message: 'User with this email already exists.' });
+        // }
+
+        // // Hash the password
+        // const hashedPassword = await bcrypt.hash(value.password, 10);
 
         // Create new user
         const newUser = new UserModel({
@@ -119,39 +132,114 @@ export const registerUser = async (req, res, next) => {
     }
 };
 
-// // **** Register Other Users Logic ****
-// export const registerUser = async (req, res, next) => {
-//     try {
-//         const { email, password, role } = req.body;
+export const createCourse = async (req, res, next) => {
+    try {
+      const { name, description, duration } = req.body;
+  
+      // Validate request body 
+      if (!name || !description || !duration) {
+        return res.status(400).send("All fields are required");
+      }
+  
+      // Check if course already exists
+      const existingCourse = await CourseModel.findOne({ name });
+      if (existingCourse) {
+        return res.status(409).send("Course with this name already exists");
+      }
+  
+      // Create and save the course
+      const newCourse = await CourseModel.create(req.body);
+      res.status(201).json({
+        message: "Course successfully created",
+        course: newCourse,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+  
+  export const updateCourse = async (req, res, next) => {
+    try {
+      const { id } = req.params;
+  
+      // Validate request body
+      if (!Object.keys(req.body).length) {
+        return res.status(400).send("Request body cannot be empty");
+      }
+  
+      // Find and update the course
+      const updatedCourse = await CourseModel.findByIdAndUpdate(id, req.body, {
+        new: true,
+      });
+  
+      if (!updatedCourse) {
+        return res.status(404).send("Course not found");
+      }
+  
+      res.status(200).json({
+        message: "Course updated successfully",
+        course: updatedCourse,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 
-//         // Validate role input
-//         if (!['teacher', 'student', 'parent'].includes(role)) {
-//             return res.status(400).json({ message: 'Invalid role specified' });
-//         }
+  
+  export const deleteCourse = async (req, res, next) => {
+    try {
+      const { id } = req.params;
+  
+      // Check if there are students enrolled in the course
+      const enrolledStudents = await StudentModel.countDocuments({ course: id });
+      if (enrolledStudents > 0) {
+        return res
+          .status(400)
+          .send("Cannot delete course with enrolled students");
+      }
+  
+      // Delete the course
+      const deletedCourse = await CourseModel.findByIdAndDelete(id);
+  
+      if (!deletedCourse) {
+        return res.status(404).send("Course not found");
+      }
+  
+      res.status(200).send("Course deleted successfully");
+    } catch (error) {
+      next(error);
+    }
+  };
+  
 
-//         // Hash the password before saving
-//         const hashedPassword = await bcrypt.hash(password, 10);
+  export const getCourseById = async (req, res, next) => {
+    try {
+      const { id } = req.params;
+  
+      // Find the course
+      const course = await CourseModel.findById(id);
+  
+      if (!course) {
+        return res.status(404).send("Course not found");
+      }
+  
+      res.status(200).json(course);
+    } catch (error) {
+      next(error);
+    }
+  };
 
-//         // Create new user based on role
-        
-//         const newUser = new User ({
-//             email,
-//             password: hashedPassword,
-//             role // Set the role as specified in request
-//         });
-
-//         await newUser.save();
-        
-//         // Send success response
-//         res.status(201).json({
-//             message: `${role.charAt(0).toUpperCase() + role.slice(1)} registered successfully`,
-//             user: {
-//                 username: newUser.username,
-//                 role: newUser.role
-//             }
-//         });
-//     } catch (error) {
-//         next(error);
-//         // next(new Error('Error registering ser: ' + error.message));
-//     }
-// };
+  
+  export const getAllCourses = async (req, res, next) => {
+    try {
+      const courses = await CourseModel.find().sort({ name: 1 });
+  
+      res.status(200).json({
+        message: `Retrieved ${courses.length} courses successfully`,
+        courses,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+  

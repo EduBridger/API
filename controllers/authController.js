@@ -6,22 +6,22 @@ import { userSchema } from '../validators/userValidator.js';
 // Login logic
 export const login = async (req, res,next) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
-    // Validate input
-    const { error } = userSchema.validate({ username, password });
-    if (error) return res.status(400).json({ message: error.details[0].message });
+    // // Validate input
+    // const { error } = userSchema.validate({ email, password });
+    // if (error) return res.status(400).json({ message: error.details[0].message });
 
     // Find user by email
-    const user = await UserModel.findOne({ email: username });
-    if (!user) return res.status(400).json({ message: 'Invalid username or password' });
+    const user = await UserModel.findOne({ email: email });
+    if (!user) return res.status(400).json({ message: 'Invalid email or password' });
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid username or password' });
+    if (!isMatch) return res.status(400).json({ message: 'Invalid email or password' });
 
     // Generate token
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET_KEY, { expiresIn: '1d' });
 
     res.json({ message: 'Login successful', token });
   } catch (error) {
