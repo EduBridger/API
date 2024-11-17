@@ -1,6 +1,6 @@
 import Joi from "joi";
 
-export const teacherSchema = Joi.object({
+export const studentSchema = Joi.object({
 
   firstName: Joi.string().required().max(255),
 

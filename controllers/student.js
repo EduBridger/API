@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { StudentModel } from '../models/studentModel.js';
+import { AssignmentModel } from '../models/assignmentModel.js';
 
 
 
@@ -47,4 +48,38 @@ export const loginStudent = async (req, res, next) => {
     } catch (error) {
         next(error)
     }
-}
+};
+
+export const submitAssignment = async (req, res, next) => {
+    try {
+      const { studentId, title, content } = req.body;
+      const file = req.file;
+  
+      // Validate input
+      if (!studentId || !title || (!content && !file)) {
+        return res.status(400).json({
+          message: "Student ID, title, and either content or a file are required.",
+        });
+      }
+  
+      // Prepare assignment data
+      const assignmentData = {
+        studentId,
+        title,
+        content: content || null,
+        filePath: file ? file.path : null,
+      };
+  
+      // Save assignment to the database
+      const assignment = new AssignmentModel(assignmentData);
+      await assignment.save();
+  
+      // Respond with success
+      res.status(201).json({
+        message: "Assignment submitted successfully!",
+        assignment,
+      });
+    } catch (error) {
+      next(error); // Pass errors to the error-handling middleware
+    }
+  };

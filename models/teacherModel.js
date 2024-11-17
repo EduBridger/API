@@ -11,9 +11,9 @@ const teacherSchema = new Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['teacher', 'student', 'parent', 'admin'], required: true },
-    subject: { type: String, required: true },
-  yearsOfExperience: { type: Number, required: true },
-    profilePicture: String, // Optional: Users can upload their avatars
+    course: { type: String, required: true },
+  // yearsOfExperience: { type: Number, required: true },
+    // profilePicture: String, // Optional: Users can upload their avatars
   },
 
   { timestamps: true }
