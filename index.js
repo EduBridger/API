@@ -6,6 +6,7 @@ import teacherRoutes from './routes/teacherRoutes.js';
 import studentRoutes from './routes/studentRoutes.js';
 import parentRoutes from './routes/parentRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import cors from "cors";
 
 dotenv.config();
 
