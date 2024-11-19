@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { permissions } from '../util/rbac.js';
 
 export const isAuthenticate = (req, res, next) => {
   const accessToken = req.header('Authorization')?.replace('Bearer ', '');
@@ -13,7 +14,40 @@ export const isAuthenticate = (req, res, next) => {
   }
 };
 
-export const authorize = (role) => (req, res, next) => {
-  if (req.user.role !== role) return res.status(403).json({ message: 'Access forbidden' });
+export const authorize = (...roles) => (req, res, next) => {
+  if (!roles.includes(req.user.role)) {
+    return res.status(403).json({ 
+      message: `Access forbidden. Required roles: ${roles.join(', ')}`
+    });
+  }
   next();
 };
+
+export const hasPermission = (requiredAction) => {
+  return async (req, res, next) => {
+    try {
+      const userRole = req.user.role;
+      
+      // Find permission config for user's role
+      const rolePermissions = permissions.find(p => p.role === userRole);
+      
+      if (!rolePermissions) {
+        return res.status(403).json({
+          message: `No permissions found for role: ${userRole}`
+        });
+      }
+
+      // Check if user's role has permission for this action
+      if (rolePermissions.actions.includes(requiredAction)) {
+        next();
+      } else {
+        return res.status(403).json({
+          message: `Action '${requiredAction}' not allowed for role: ${userRole}`
+        });
+      }
+
+    } catch (error) {
+      next(error);
+    }
+  }
+}

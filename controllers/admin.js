@@ -28,13 +28,13 @@ export const registerAdmin = async (req, res, next) => {
     } else {
       const hashedPassword = bcrypt.hashSync(value.password, 12);
       value.password = hashedPassword;
+      value.role = 'admin'; // Set role as admin
 
       await AdminModel.create(value);
       return res.status(201).send("Admin successfully registered");
     }
   } catch (error) {
     next(error)
-
   }
 };
 
@@ -46,7 +46,7 @@ export const loginAdmin = async (req, res, next) => {
     // finding admin using their unique email
     const admin = await AdminModel.findOne({ email: email });
     if (!admin) {
-      return res.status(401).json("Invalide email or passwor");
+      return res.status(401).json("Invalid email or password");
     }
     // Compare the provided password with the stored hashed password
     const isMatch = await bcrypt.compare(password, admin.password);
@@ -56,12 +56,18 @@ export const loginAdmin = async (req, res, next) => {
 
     // Generate JWT token with admin's ID and role
     const accessToken = jwt.sign(
-      { id: admin._id, admin: admin.role === "admin" },
+      { 
+        id: admin._id,
+        role: admin.role // Include role in token
+      },
       process.env.JWT_SECRET_KEY,
       { expiresIn: "1h" });
 
     const refreshToken = jwt.sign(
-      { id: admin._id },
+      { 
+        id: admin._id,
+        role: admin.role
+      },
       process.env.REFRESH_TOKEN_SECRET,
       { expiresIn: "7d" }
     );
@@ -85,19 +91,11 @@ export const loginAdmin = async (req, res, next) => {
 
 export const registerStudent = async (req, res, next) => {
   try {
-
     const { error, value } = studentSchema.validate(req.body);
     if (error) {
       return res.status(400).send(error.details[0].message);
     }
 
-    // // Validate input
-    // const email = value.email 
-    // if (!email) {
-    //     return res.status(400).json({ message: 'Email is required' });
-    // }
-
-    //  Check if the Student is already in the Database
     const email = value.email;
 
     const findIfStudentExist = await StudentModel.findOne({ email });
@@ -106,21 +104,12 @@ export const registerStudent = async (req, res, next) => {
     } else {
       const hashedPassword = bcrypt.hashSync(value.password, 12);
       value.password = hashedPassword;
+      value.role = 'student'; // Set role as student
 
       await StudentModel.create(value);
       return res.status(201).send("Student successfully registered");
     }
 
-    // // Check if the Student already exists
-    // const existingStudent = await StudentModel.findOne({ email });
-    // if (existingStudent) {
-    //     return res.status(400).json({ message: 'Student with this email already exists.' });
-    // }
-
-    // // Hash the password
-    // const hashedPassword = await bcrypt.hash(value.password, 10);
-
-    // Create new Student
     const newStudent = new StudentModel({
       ...value
     });
@@ -129,28 +118,17 @@ export const registerStudent = async (req, res, next) => {
 
     res.status(201).json({ message: 'Student registered successfully' });
   } catch (error) {
-    // if (error.code === 11000) {
-    //     return res.status(400).json({ message: 'Duplicate key error' });
-    // }
     next(error);
   }
 };
 
 export const registerTeacher = async (req, res, next) => {
   try {
-
     const { error, value } = teacherSchema.validate(req.body);
     if (error) {
       return res.status(400).send(error.details[0].message);
     }
 
-    // // Validate input
-    // const email = value.email 
-    // if (!email) {
-    //     return res.status(400).json({ message: 'Email is required' });
-    // }
-
-    //  Check if the Teacher is already in the Database
     const email = value.email;
 
     const findIfTeacherExist = await TeacherModel.findOne({ email });
@@ -159,21 +137,12 @@ export const registerTeacher = async (req, res, next) => {
     } else {
       const hashedPassword = bcrypt.hashSync(value.password, 12);
       value.password = hashedPassword;
+      value.role = 'teacher'; // Set role as teacher
 
       await TeacherModel.create(value);
       return res.status(201).send("Teacher successfully registered");
     }
 
-    // // Check if the Teacher already exists
-    // const existingTeacher = await TeacherModel.findOne({ email });
-    // if (existingTeacher) {
-    //     return res.status(400).json({ message: 'Teacher with this email already exists.' });
-    // }
-
-    // // Hash the password
-    // const hashedPassword = await bcrypt.hash(value.password, 10);
-
-    // Create new Teacher
     const newTeacher = new TeacherModel({
       ...value
     });
@@ -182,9 +151,6 @@ export const registerTeacher = async (req, res, next) => {
 
     res.status(201).json({ message: 'Teacher registered successfully' });
   } catch (error) {
-    // if (error.code === 11000) {
-    //     return res.status(400).json({ message: 'Duplicate key error' });
-    // }
     next(error);
   }
 };
@@ -215,35 +181,6 @@ export const createCourse = async (req, res, next) => {
   }
 };
 
-
-// export const updateCourse = async (req, res, next) => {
-//   try {
-//     // validate the input 
-//     const {error, value} =updateCourseSchema.validate(req.body);
-//     if (error){
-//       return res.status(422).json(error);
-//     }
-//     // Find and update the course
-//     const updatedCourse = await CourseModel.findOneAndUpdate({
-//       _id: re.params.id,
-//       Student: req.admin.id
-//     },
-//   value,
-// {new:true}
-// );
-
-// if (!updatedCourse) {
-//   return res.status(404).json({mesage:"Course not found"});
-// }
-
-// //Respond to request
-// re.status(201).json('Course has been updated'); 
-//   } catch (error) {
-//     next(error);
-//   }
-// }
-
-
 export const updateCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -270,7 +207,6 @@ export const updateCourse = async (req, res, next) => {
     next(error);
   }
 };
-
 
 export const deleteCourse = async (req, res, next) => {
   try {
@@ -350,7 +286,7 @@ export const updateStudent = async (req, res, next) => {
     }
 
     // Update the student's details in the database
-    const updatedStudent = await Student.findOneAndUpdate(
+    const updatedStudent = await StudentModel.findOneAndUpdate(
       { _id: req.params.id }, // Find the student by ID
       { $set: req.body }, // Update the provided fields
       { new: true, runValidators: true } // Return the updated document and validate fields
@@ -368,45 +304,16 @@ export const updateStudent = async (req, res, next) => {
       student: updatedStudent,
     });
   } catch (error) {
-    next(error); // Pass errors to the error-handling middleware
+    next(error);
   }
 };
-
-
-// export const updateStudent = async (req, res, next) => {
-//   try {
-//     const { id } = req.params;
-
-//     // Validate request body
-//     if (!Object.keys(req.body).length) {
-//       return res.status(400).send("Request body cannot be empty");
-//     }
-
-//     // Find and update the student
-//     const updatedStudent = await Student.findByIdAndUpdate(id, req.body, {
-//       new: true,
-//     });
-
-//     if (!updatedStudent) {
-//       return res.status(404).send("Student not found");
-//     }
-
-//     res.status(200).json({
-//       message: "Student updated successfully",
-//       student: updatedStudent,
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
 
 export const deleteStudent = async (req, res, next) => {
   try {
     const { id } = req.params;
 
     // Find and delete the student
-    const deletedStudent = await Student.findByIdAndDelete(id);
+    const deletedStudent = await StudentModel.findByIdAndDelete(id);
 
     if (!deletedStudent) {
       return res.status(404).send("Student not found");
@@ -417,15 +324,20 @@ export const deleteStudent = async (req, res, next) => {
     next(error);
   }
 };
-
 export const searchStudents = async (req, res, next) => {
   try {
     const { query: searchTerm } = req.query;
 
+    // If no search term provided, return all students
     if (!searchTerm) {
-      return res.status(400).send("Search term is required");
+      const students = await StudentModel.find().sort({ createdAt: -1 });
+      return res.status(200).json({
+        message: `Retrieved ${students.length} students`,
+        students,
+      });
     }
 
+    // If search term exists, search for matching students
     const students = await StudentModel.find({
       $or: [
         { name: { $regex: searchTerm, $options: "i" } },
@@ -443,18 +355,36 @@ export const searchStudents = async (req, res, next) => {
   }
 };
 
+export const getAllTeachers = async (req, res, next) => {
+  try {
+    const teachers = await TeacherModel.find().sort({ createdAt: -1 });
+
+    res.status(200).json({
+      message: `Retrieved ${teachers.length} teachers successfully`,
+      teachers,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const searchTeachers = async (req, res, next) => {
   try {
     const { query: searchTerm } = req.query;
 
+    // If no search term is provided, return all teachers
     if (!searchTerm) {
-      return res.status(400).send("Search term is required");
+      const teachers = await TeacherModel.find();
+      return res.status(200).json({
+        message: `Retrieved ${teachers.length} teachers`,
+        teachers,
+      });
     }
 
     const teachers = await TeacherModel.find({
       $or: [
         { name: { $regex: searchTerm, $options: "i" } },
-        { course: { $regex: searchTerm, $options: "i" } },
+        { subject: { $regex: searchTerm, $options: "i" } },
         { email: { $regex: searchTerm, $options: "i" } },
       ],
     });
