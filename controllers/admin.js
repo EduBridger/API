@@ -46,38 +46,43 @@ export const loginAdmin = async (req, res, next) => {
     // finding admin using their unique email
     const admin = await AdminModel.findOne({ email: email });
     if (!admin) {
-      return res.status(401).json("Invalid email or password");
+      return res.status(401).json({message: "Invalid email or password"});
     }
     // Compare the provided password with the stored hashed password
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) {
-      return res.status(401).json('Invalid email or password');
+      return res.status(401).json({message: 'Invalid email or password'});
     }
 
     // Generate JWT token with admin's ID and role
     const accessToken = jwt.sign(
       { 
         id: admin._id,
-        role: admin.role // Include role in token
+        role: admin.role, // Include role in token
+        admin: true // Explicitly set admin flag
       },
       process.env.JWT_SECRET_KEY,
-      { expiresIn: "1h" });
+      { expiresIn: "1d" });
 
     const refreshToken = jwt.sign(
       { 
         id: admin._id,
-        role: admin.role
+        role: admin.role,
+        admin: true
       },
       process.env.REFRESH_TOKEN_SECRET,
       { expiresIn: "7d" }
     );
 
-    // Send response with tokens
+    // Send response with tokens and set headers
+    res.setHeader('Authorization', `Bearer ${accessToken}`);
     res.status(200).json({
+      success: true,
       message: 'Login Successfully',
       token: accessToken,
       refreshToken: refreshToken,
       admin: {
+        id: admin._id,
         name: admin.name,
         email: admin.email,
         role: admin.role,
@@ -212,23 +217,45 @@ export const deleteCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
 
+    // Validate course ID
+    if (!id) {
+      return res.status(400).json({
+        message: "Course ID is required"
+      });
+    }
+
+    // Check if course exists first
+    const course = await CourseModel.findById(id);
+    if (!course) {
+      return res.status(404).json({
+        message: "Course not found"
+      });
+    }
+
     // Check if there are students enrolled in the course
     const enrolledStudents = await StudentModel.countDocuments({ course: id });
     if (enrolledStudents > 0) {
-      return res
-        .status(400)
-        .send("Cannot delete course with enrolled students");
+      return res.status(400).json({
+        message: "Cannot delete course with enrolled students",
+        enrolledCount: enrolledStudents
+      });
     }
 
     // Delete the course
-    const deletedCourse = await CourseModel.findByIdAndDelete(id);
+    await CourseModel.findByIdAndDelete(id);
 
-    if (!deletedCourse) {
-      return res.status(404).send("Course not found");
-    }
+    res.status(200).json({
+      message: "Course deleted successfully",
+      deletedCourse: course
+    });
 
-    res.status(200).send("Course deleted successfully");
   } catch (error) {
+    // Handle specific MongoDB errors
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        message: "Invalid course ID format"
+      });
+    }
     next(error);
   }
 };
