@@ -1,7 +1,7 @@
 import express from 'express';
 import { completeProfile } from '../controllers/authController.js';
 import { authorize, isAuthenticate, hasPermission } from '../middlewares/authMiddleware.js';
-import { createCourse, deleteCourse, deleteStudent, getAllCourses, getAllStudents, getCourseById, loginAdmin, registerAdmin, registerStudent, registerTeacher, searchStudents, searchTeachers, updateCourse, updateStudent } from '../controllers/admin.js';
+import { createCourse, deleteCourse, deleteStudent, getAllCourses, getAllStudents, getCourseById, loginAdmin, registerAdmin, registerStudent, registerTeacher, searchStudents, searchTeachers, updateCourse, updateStudent, deleteTeacher, updateTeacher } from '../controllers/admin.js';
 
 const adminRouter = express.Router();
 
@@ -19,11 +19,13 @@ adminRouter.get('/admin/students/search', isAuthenticate, authorize('admin'), ha
 // Teacher routes
 adminRouter.post('/admin/teacher/registration', isAuthenticate, authorize('admin'), hasPermission('create_teacher'), registerTeacher);
 adminRouter.get('/admin/teachers', isAuthenticate, authorize('admin'), hasPermission('view_teachers'), searchTeachers);
+adminRouter.delete('/admin/teachers/delete/:id', isAuthenticate, authorize('admin'), hasPermission('delete_teacher'), deleteTeacher);
+adminRouter.patch('/admin/teachers/update/:id', isAuthenticate, authorize('admin'), hasPermission('update_teacher'), updateTeacher);
 
 // Course routes
 adminRouter.post('/admin/course/add', isAuthenticate, authorize('admin'), hasPermission('create_course'), createCourse);
 adminRouter.patch('/admin/courses/update/:id', isAuthenticate, authorize('admin'), hasPermission('update_course'), updateCourse);
-adminRouter.delete('/admin/course/delete/:id', isAuthenticate, authorize('admin'), hasPermission('delete_course'), deleteCourse);
+adminRouter.delete('/admin/courses/:id', isAuthenticate, authorize('admin'), hasPermission('delete_course'), deleteCourse);
 adminRouter.get('/admin/courses', isAuthenticate, authorize('admin'), hasPermission('view_courses'), getAllCourses);
 adminRouter.get('/admin/course/:id', isAuthenticate, authorize('admin'), hasPermission('view_courses'), getCourseById);
 

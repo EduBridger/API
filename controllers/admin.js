@@ -160,6 +160,7 @@ export const registerTeacher = async (req, res, next) => {
   }
 };
 
+
 export const createCourse = async (req, res, next) => {
   try {
     const { name, description, duration } = req.body;
@@ -217,45 +218,24 @@ export const deleteCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // Validate course ID
-    if (!id) {
-      return res.status(400).json({
-        message: "Course ID is required"
-      });
-    }
+    // Find and delete the course
+    const deletedCourse = await CourseModel.findByIdAndDelete(id);
 
-    // Check if course exists first
-    const course = await CourseModel.findById(id);
-    if (!course) {
+    // If course not found, return 404
+    if (!deletedCourse) {
       return res.status(404).json({
+        success: false,
         message: "Course not found"
       });
     }
 
-    // Check if there are students enrolled in the course
-    const enrolledStudents = await StudentModel.countDocuments({ course: id });
-    if (enrolledStudents > 0) {
-      return res.status(400).json({
-        message: "Cannot delete course with enrolled students",
-        enrolledCount: enrolledStudents
-      });
-    }
-
-    // Delete the course
-    await CourseModel.findByIdAndDelete(id);
-
-    res.status(200).json({
-      message: "Course deleted successfully",
-      deletedCourse: course
+    // Return success response
+    return res.status(200).json({
+      success: true, 
+      message: "Course deleted successfully"
     });
 
   } catch (error) {
-    // Handle specific MongoDB errors
-    if (error.name === 'CastError') {
-      return res.status(400).json({
-        message: "Invalid course ID format"
-      });
-    }
     next(error);
   }
 };
@@ -419,6 +399,58 @@ export const searchTeachers = async (req, res, next) => {
     res.status(200).json({
       message: `Found ${teachers.length} teacher(s) for search term "${searchTerm}"`,
       teachers,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteTeacher = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // Find and delete the teacher
+    const deletedTeacher = await TeacherModel.findByIdAndDelete(id);
+
+    if (!deletedTeacher) {
+      return res.status(404).json({
+        success: false,
+        message: "Teacher not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Teacher deleted successfully"
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateTeacher = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    // Find and update the teacher
+    const updatedTeacher = await TeacherModel.findByIdAndUpdate(
+      id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedTeacher) {
+      return res.status(404).json({
+        success: false,
+        message: "Teacher not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Teacher updated successfully",
+      data: updatedTeacher
     });
   } catch (error) {
     next(error);

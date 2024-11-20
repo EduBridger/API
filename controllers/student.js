@@ -27,7 +27,7 @@ export const loginStudent = async (req, res, next) => {
                 role: 'student' // Set explicit role
             },
             process.env.JWT_SECRET_KEY,
-            { expiresIn: "1h" }
+            { expiresIn: "1d" }
         );
 
         const refreshToken = jwt.sign(
