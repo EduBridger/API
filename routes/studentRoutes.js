@@ -14,7 +14,7 @@ import { StudentAssignmentSubmission } from '../middlewares/upload.js';
 const studentRouter = express.Router();
 
 // Auth routes
-studentRouter.post('/login', loginStudent);
+studentRouter.post('/student/login', loginStudent);
 
 // Profile routes - require student role
 studentRouter.get('/profile', isAuthenticate, checkRole('student'), getStudentProfile);

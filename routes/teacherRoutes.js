@@ -5,7 +5,7 @@ import { loginTeacher } from '../controllers/teacher.js';
 
 const teacherRouter = express.Router();
 
-teacherRouter.post('/teacher/login', login);
+teacherRouter.post('/teacher/login', loginTeacher);
 teacherRouter.put('/user/profile', isAuthenticate, completeProfile); // Protected route
 
 export default teacherRouter;
