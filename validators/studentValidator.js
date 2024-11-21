@@ -8,7 +8,7 @@ export const studentSchema = Joi.object({
 
   course: Joi.string().required().max(255),
 
-  level: Joi.number().required().max(5),
+  level: Joi.string().required().max(255),
 
   role: Joi.string().required().max(255),
 
