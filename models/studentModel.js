@@ -10,7 +10,7 @@ const studentSchema = new Schema(
     lastName: { type: String, required: true },
     course: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    level: { type: Number, required: true },
+    level: { type: Number, required: false },
     password: { type: String, required: true },
     role: { type: String, enum: ['teacher', 'student', 'parent', 'admin'], required: true },
     
